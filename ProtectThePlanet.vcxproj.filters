@@ -1,0 +1,61 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="ProtectThePlanet.cpp" />
+    <ClCompile Include="src\Asteroid.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Planet.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\SpaceShip.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="include\Utility.cpp" />
+    <ClCompile Include="src\bullet.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{dfab39d7-f620-41d4-bb37-365bbb87d79b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{dbdcdef9-761e-48f8-8f60-2140cc29c287}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders">
+      <UniqueIdentifier>{bb1f5eb6-f12b-4ed6-a898-91c7ae142633}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\Asteroid.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Game.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Planet.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\SpaceShip.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Utility.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\bullet.h">
+      <Filter>include</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shaders\backgroundShader .vs">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\backgroundShader.fs">
+      <Filter>shaders</Filter>
+    </None>
+  </ItemGroup>
+</Project>
