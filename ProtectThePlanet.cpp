@@ -31,7 +31,6 @@ int main(void)
 	//--------------------------------------------------------------------------------------
 
 
-	SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 	InitWindow(screenWidth, screenHeight, "Protect The Planet");
 	InitAudioDevice();
 
