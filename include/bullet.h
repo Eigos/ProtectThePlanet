@@ -1,16 +1,16 @@
 #pragma once
 #include "Utility.hpp"
+#include "SpaceShip.h"
 
+enum WeaponType;
 
-class Bullet : Object {
+typedef WeaponType BulletType;
 
-private:
-	Drawable* texture;
+class Bullet : public Object {
 
 public: 
+	BulletType bulletType;
+	Drawable* drawable;
 
-	void setTexture(Drawable* newTexture);
-
-	Drawable* getTexture();
 };
 

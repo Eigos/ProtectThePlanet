@@ -1,20 +1,29 @@
 #pragma once
 #include "Utility.hpp"
+#include "bullet.h"
 
-struct SpaceShipOptions {
-	Object objectVariables;
-	Drawable* drawable;
+enum WeaponType {
+	NoType = -1,
+	Rocket = 0,
+	LaserShot,
+	PlasmaShot,
+	LaserCutter
 };
 
 class SpaceShip : public Object {
 
 private:
+	Bullet* ShootBasic();
+
+	BulletType bulletTypeCurrent;
+	
+	BulletType bulletTypeFirst;
+	BulletType bulletTypeSecond;
+
+public:
+
 	const static int DefWidth = 70;
 	const static int DefHeight = 46;
-	
-	Drawable* texture;
-	
-public:
 
 	const static float MaxSpeed;
 	const static float Acceleration;
@@ -24,9 +33,21 @@ public:
 	int HP = 4;
 	bool canShoot = true;
 
-	SpaceShip(const SpaceShipOptions& ShipOptions);
+	Drawable* BulletTextureFirst;
+	Drawable* BulletTextureSecond;
 
-	SpaceShip() {};
+	BulletType getBulletTypeCurrent();
+	BulletType getBulletTypeFirst();
+	BulletType getBulletTypeSecond();
+	Drawable* getBulletCurrentTexture();
+
+	void BulletTypeSwap();
+	void setBulletTypeFirst(BulletType newType);
+	void setBulletTypeSecond(BulletType newType);
+
+
+
+	SpaceShip();
 
 	void MoveForward();
 
@@ -36,11 +57,7 @@ public:
 
 	void TurnRight(float dt = 1.0f);
 
-	Object* Shoot();
-
-	void setTexture(Drawable* newTexture);
-
-	Drawable* getTexture();
+	Bullet* Shoot();
 
 	const SizeInfo getSize();
 

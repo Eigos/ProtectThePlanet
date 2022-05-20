@@ -8,9 +8,9 @@
 #include "SpaceShip.h"
 #include "Asteroid.h"
 #include "Planet.h"
+#include "bullet.h"
 
-typedef Object Bullet;
-
+extern ResourceManager ResManager;
 
 class Game {
 
@@ -32,7 +32,6 @@ private:
 	bool playMusic = true;
 	bool playEffects = true;
 
-
 	SpaceShip* activeShip;
 
 	Planet planet;
@@ -47,25 +46,34 @@ private:
 
 	Music* BackgroundMusicPlaying;
 
+	struct BackgroundShaderLocation {
+
+		int32_t UniformCoordinateLocation;
+		int32_t UniformMapSizeLocation;
+	}BgShaderLocations;
+
+	std::vector<Bullet*> BulletList; //Linked list yapýlacak
+	std::vector<Asteroid*> AsteroidList; // Linked list yapýlacak 
+
+
 public:
 
 	uint16_t GameWidth = 1280;
 	uint16_t GameHeight = 720;
 
 	SpaceShip spaceShip;
-	std::vector<Bullet*> BulletList; //Linked list yapýlacak
-	std::vector<Asteroid*> AsteroidList; // Linked list yapýlacak 
 
-	std::vector<Drawable*> AsteroidTextures;
-	std::vector<Drawable*> ShipTextures;
-	std::vector<Drawable*> BulletTextures;
+	Drawable* AsteroidTextures;
+	Drawable* ShipTextures;
+
 	Drawable* PlanetTexture;
 
+
 	Sound SpaceShipShootSound;
-	
+
 	std::vector<Music*>	BackgroundMusicList;
 
-	Shader* BackgroundShader;
+	Shader* BackgroundShader = nullptr;
 
 	//False to turn off the music
 	void shouldPlayMusics(bool shouldPlay);

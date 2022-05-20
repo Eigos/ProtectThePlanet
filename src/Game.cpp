@@ -19,7 +19,7 @@ void Game::NextTick(float dt)
 
 	//Ship tick
 	{
-		//activeShip->ApplyPhysics(planet);
+		activeShip->ApplyPhysics(planet);
 		activeShip->UpdatePosition(dt);
 		activeShip->CollMask.MoveMask(activeShip->Position);
 	}
@@ -61,6 +61,28 @@ void Game::NextTick(float dt)
 				j--;
 				AsteroidCount--;
 
+				//If the bullet type is explosive create an explosion and delete every asteroid collides with
+				if (bullet->bulletType == BulletType::Rocket) {
+					
+					const float explosionRadius = 40.0f;
+
+					for (uint32_t j = 0; j < AsteroidList.size(); j++) {
+						if (CollisionCircle(Circle(bullet->Position, explosionRadius),
+							Circle{ AsteroidList[j]->Position, AsteroidList[j]->Size.radius })) {
+
+							//delete the asteroid
+							delete AsteroidList[j];
+
+							//erase from the list of asteroids
+							AsteroidList.erase(AsteroidList.begin() + j, AsteroidList.begin() + j + 1);
+
+							j--;
+							AsteroidCount--;
+						}
+					}
+
+				}
+
 				if (logEverything) {
 					std::cout << "A bullet collided with asteroid" << std::endl;
 				}
@@ -75,6 +97,7 @@ void Game::NextTick(float dt)
 
 				break;
 			}
+
 		}
 
 		//Collision detection bullet-planet
@@ -109,6 +132,7 @@ void Game::NextTick(float dt)
 		if (CollisionCircle({ ast->Position, ast->Size.radius }, { planet.Position, planet.Size.widht })) {
 
 			planet.HP--;
+
 			delete ast;
 			AsteroidList.erase(AsteroidList.begin() + i, AsteroidList.begin() + i + 1);
 			i--;
@@ -123,9 +147,8 @@ void Game::NextTick(float dt)
 
 
 		//Asteroid Space Ship collision
-		//if (CollisionCircleRect(Circle{ ast->Position, ast->Size.radius },
-		//		AABB{ activeShip->Position, activeShip->Size, activeShip->Movement.direction })) {
 		if (activeShip->CollMask.CheckCollisionCircle({ ast->Position, ast->Size.radius })) {
+
 			activeShip->HP--;
 
 			delete ast;
@@ -188,9 +211,7 @@ void Game::Draw()
 		float x = currentShip->Position.x;
 		float y = currentShip->Position.y;
 
-		Drawable* toDraw = currentShip->getTexture();
-
-		DDrawTexturePro(toDraw, { x,y }, RadianToDegreeF(currentShip->Movement.direction), WHITE);
+		DDrawTexturePro(ShipTextures, { x,y }, RadianToDegreeF(currentShip->Movement.direction), WHITE);
 	}
 
 	//Draw bullets
@@ -198,9 +219,7 @@ void Game::Draw()
 
 		Bullet* bullet = BulletList[i];
 
-		Drawable* bulletDrawable = BulletTextures[0];
-
-		DDrawTexturePro(bulletDrawable, { bullet->Position.x,bullet->Position.y }, RadianToDegreeF(bullet->Movement.direction), WHITE);
+		DDrawTexturePro(bullet->drawable, { bullet->Position.x,bullet->Position.y }, RadianToDegreeF(bullet->Movement.direction), WHITE);
 
 	}
 
@@ -209,9 +228,7 @@ void Game::Draw()
 
 		Asteroid* ast = AsteroidList[i];
 
-		Drawable* astDrawable = AsteroidTextures[0];
-
-		DDrawTexturePro(astDrawable, { ast->Position.x,ast->Position.y }, RadianToDegreeF(ast->Movement.direction), WHITE);
+		DDrawTexturePro(AsteroidTextures, { ast->Position.x,ast->Position.y }, RadianToDegreeF(ast->Movement.direction), WHITE);
 
 		//DrawCircle(ast->Position.x, ast->Position.y, ast->Size.radius, RED);
 	}
@@ -219,17 +236,15 @@ void Game::Draw()
 	//Draw Planet
 	DrawTextureProCustomSize(PlanetTexture, planet.Position, planet.Size * 2, 0.0f, WHITE);
 
-
 	//Draw Shader
 	if (enableShaders == true) {
 		if (BackgroundShader != nullptr) {
-			//int32_t loc;
 
-			Vector2 mapSize{ GameWidth, GameHeight };
-			Vector3 pos{ activeShip->Position.x, activeShip->Position.y, activeShip->Movement.direction };
+			Vector2 mapSize = {GameWidth, GameHeight};
+			Vector3 pos = { activeShip->Position.x, activeShip->Position.y, activeShip->Movement.direction};
 
-			SetShaderValue(*BackgroundShader, GetShaderLocation(*BackgroundShader, "mapSize"), &mapSize, SHADER_UNIFORM_VEC2);
-			SetShaderValue(*BackgroundShader, GetShaderLocation(*BackgroundShader, "coord"), &pos, SHADER_UNIFORM_VEC3);
+			SetShaderValue(*BackgroundShader, BgShaderLocations.UniformCoordinateLocation, &pos, SHADER_UNIFORM_VEC3);
+			SetShaderValue(*BackgroundShader, BgShaderLocations.UniformMapSizeLocation, &mapSize, SHADER_UNIFORM_VEC2);
 
 			BeginShaderMode(*BackgroundShader);
 
@@ -293,7 +308,11 @@ void Game::Draw()
 
 
 	//Draw Score
-	DrawText(std::string{ "Score: " + std::to_string(Score) }.c_str(), GameWidth / 2, 50, 40, RED);
+	DrawText(std::string{ "Score: " + std::to_string(Score) }.c_str(), GameWidth / 2 - 90, 50, 40, RED);
+	
+	//Draw Hp
+	DrawText(std::string{ "People on Earth: " + std::to_string(planet.HP) + "K" }.c_str(), 50, 50, 40, RED);
+
 
 }
 
@@ -316,17 +335,51 @@ void Game::Input()
 	}
 
 	if (IsKeyDown(KEY_SPACE)) {
+
+		
+
 		if (activeShip->canShoot == true) {
-			if (playEffects) {
-				PlaySound(SpaceShipShootSound);
+
+			switch (activeShip->getBulletTypeCurrent())
+			{
+			case WeaponType::Rocket: {
+
+				if (activeShip->canShoot == true) {
+					if (playEffects) {
+						PlaySound(SpaceShipShootSound);
+					}
+					BulletList.push_back(activeShip->Shoot());
+				}
+				activeShip->canShoot = false;
+
+				break;
 			}
-			BulletList.push_back(activeShip->Shoot());
+
+			case WeaponType::LaserShot: {
+				if (activeShip->canShoot == true) {
+					if (playEffects) {
+						PlaySound(SpaceShipShootSound); //same as rocket sound for now
+					}
+					BulletList.push_back(activeShip->Shoot());
+				}
+				activeShip->canShoot = false;
+
+				break;
+			}
+
+			default:
+				break;
+			}
+
 		}
-		activeShip->canShoot = false;
 	}
 
 	if (IsKeyReleased(KEY_SPACE)) {
 		activeShip->canShoot = true;
+	}
+
+	if (IsKeyReleased(KEY_Q)) {
+		activeShip->BulletTypeSwap();
 	}
 
 	if (IsKeyDown(KEY_T)) {
@@ -346,7 +399,6 @@ void Game::Input()
 void Game::Run()
 {
 	activeShip = &spaceShip;
-	spaceShip.setTexture(ShipTextures[0]);
 
 	//Init Planet
 	planet.Position.x = static_cast<float>(GameWidth) / 2;
@@ -359,11 +411,12 @@ void Game::Run()
 
 	running = true;
 
-
-
 	BackgroundMusicPlaying = BackgroundMusicList[0];
 	PlayMusicStream(*BackgroundMusicPlaying);
 
+
+	BgShaderLocations.UniformMapSizeLocation = GetShaderLocation(*BackgroundShader, "mapSize");
+	BgShaderLocations.UniformCoordinateLocation = GetShaderLocation(*BackgroundShader, "coord");
 
 }
 
@@ -477,4 +530,3 @@ void Game::shouldPlayEffects(bool shouldPlay) {
 		StopSound(SpaceShipShootSound);
 	}
 }
-

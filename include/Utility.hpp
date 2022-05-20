@@ -2,9 +2,11 @@
 #include <cmath>
 #include <algorithm>
 #include <vector>
+#include <string>
 
 #include "raylib.hpp"
 
+class ResourceManager;
 struct MovementInfo;
 struct SizeInfo;
 struct Object;
@@ -45,7 +47,13 @@ struct Point {
 	float x = 0.0f;
 	float y = 0.0f;
 
-	
+	const Vector2& toVec2() {
+		Vector2 newVec{ x,y };
+
+		return newVec;
+	}
+
+
 	Point operator-(Point& point) {
 		Point p;
 
@@ -134,9 +142,9 @@ struct MovementInfo {
 };
 
 struct SizeInfo {
-	float widht = 0;
-	float height = 0;
-	float radius = 0;
+	float widht = 0.0f;
+	float height = 0.0f;
+	float radius = 0.0f;
 
 	SizeInfo operator*(const int& mult) {
 		SizeInfo newSize;
@@ -157,16 +165,17 @@ struct Physics {
 
 };
 
+// Axis - Aligned Bounding Box
 struct AABB {
 
-	Point point;
-	float width;
-	float height;
-	float rotation;
-	AABB() { point = Point{ 0,0 }; width = 0; height = 0; rotation = 0; };
-	AABB(SizeInfo size) : width(size.widht), height(size.height) { point = Point{ 0,0 }; rotation = 0; }
-	AABB(Point point) : point(point) { width = 0; height = 0; rotation = 0; }
-	AABB(Point point, SizeInfo size) : width(size.widht), height(size.height), point(point) { rotation = 0; }
+	Point point = { 0,0 };
+	float width = 0.0f;
+	float height = 0.0f;
+	float rotation = 0.0f;
+	AABB() {};
+	AABB(SizeInfo size) : width(size.widht), height(size.height) {}
+	AABB(Point point) : point(point) {}
+	AABB(Point point, SizeInfo size) : width(size.widht), height(size.height), point(point) {}
 	AABB(Point point, SizeInfo size, float rotation) :
 		width(size.widht), height(size.height), point(point), rotation(rotation) {}
 
@@ -174,9 +183,9 @@ struct AABB {
 
 struct Circle {
 
-	Point point;
-	float radius;
-	Circle();
+	Point point = { 0.0f, 0.0f };
+	float radius = 0.0f;
+	Circle() {};
 	Circle(Point point) : point(point) {};
 	Circle(float radius) : radius(radius) {};
 	Circle(Point point, float radius) : point(point), radius(radius) {};
@@ -201,7 +210,7 @@ struct CollisionMask {
 				mask.rotation = PI;
 			}
 		}
-		
+
 		if (angle == PI) {
 			if (mask.point.x > origin.x) {
 				mask.rotation = 0;
@@ -354,7 +363,6 @@ struct Object {
 
 };
 
-
 struct Drawable {
 
 private:
@@ -362,7 +370,9 @@ private:
 	float widthSpecifier = 0;
 	float heightSpecifier = 0;
 
+
 public:
+
 	Drawable(const Texture2D& newTexture) {
 		texture = newTexture;
 		source = Rectangle{ 0, 0, static_cast<float>(texture.width), static_cast<float>(texture.height) };
@@ -370,6 +380,9 @@ public:
 		origin = { (static_cast<float>(texture.width) - widthSpecifier) / 2, (static_cast<float>(texture.height) - heightSpecifier) / 2 };
 
 	}
+
+	Drawable(const Drawable& drawable) : widthSpecifier(drawable.widthSpecifier), heightSpecifier(drawable.heightSpecifier),
+		source(drawable.source), dest(drawable.dest), origin(drawable.origin), texture(drawable.texture) {};
 
 	//image data
 	Texture2D texture;
@@ -417,6 +430,231 @@ public:
 		heightSpecifier = dest.height - newHeight;
 		origin.y -= heightSpecifier / 2;
 		dest.height -= heightSpecifier;
+	}
+
+};
+
+/* TODO
+class Animation : public Drawable {
+
+private:
+	uint32_t frameCountVertical;
+	uint32_t frameCountHorizontal;
+	uint32_t currentFrameIndex;
+
+	SizeInfo frameSize;
+
+	uint32_t targetFps;
+	uint32_t currentTick;
+	
+
+
+
+	SizeInfo CalculateFrameSize() {
+		SizeInfo size;
+		size.widht = texture.width / frameCountHorizontal;
+		size.height = texture.height / frameCountVertical;
+	};
+
+	uint32_t getFrameCount() {
+		return frameCountVertical * frameCountHorizontal;
+	}
+
+public:
+
+	Animation(Texture2D texture) :
+		Drawable(texture), frameCountVertical(0), frameCountHorizontal(0), currentFrameIndex(0) {};
+
+	Animation(Texture2D texture, uint32_t frameCountVertical, uint32_t frameCountHorizontal) :
+		Drawable(texture), frameCountHorizontal(frameCountHorizontal), frameCountVertical(frameCountVertical), currentFrameIndex(0),
+		frameSize(CalculateFrameSize()) {};
+
+	Animation(Drawable* drawable, uint32_t frameCountVertical, uint32_t frameCountHorizontal) :
+		Drawable(*drawable), frameCountHorizontal(frameCountHorizontal), frameCountVertical(frameCountVertical), currentFrameIndex(0),
+		frameSize(CalculateFrameSize()) {};
+
+	void setFrameCountVertical(uint32_t newFrameCount) {
+		frameCountVertical = newFrameCount;
+		frameSize = CalculateFrameSize();
+
+	}
+
+	void setFrameCountHorizontal(uint32_t newFrameCount) {
+		frameCountHorizontal = newFrameCount;
+		frameSize = CalculateFrameSize();
+	}
+
+	uint32_t getFrameCountVertical() {
+		return frameCountVertical;
+	}
+
+	uint32_t getFrameCountHorizontal() {
+		return frameCountHorizontal;
+	}
+
+	uint32_t getFrameCurrentIndex() {
+		return currentFrameIndex;
+	}
+
+	Rectangle getCurrentFrame() {
+		Rectangle newRect;
+
+		uint32_t xOffset = currentFrameIndex % frameCountHorizontal;
+		uint32_t yOffset = currentFrameIndex / frameCountVertical;
+
+		newRect.x = xOffset * frameSize.widht;
+		newRect.y = yOffset * frameSize.height;
+
+		newRect.width = frameSize.widht;
+		newRect.height = frameSize.height;
+
+		return newRect;
+	}
+
+	void TickFrame() {
+		currentTick++;
+
+
+	}
+
+	//TO-DO: make it frame independent by passing delta time
+	void setTargetFps(uint32_t fps) {
+
+	}
+
+};
+*/
+
+class ResourceManager {
+
+public:
+
+	enum class SourceType {
+		Unknown,
+		Drawable,
+		Sound,
+		Music,
+		Shader
+	};
+
+private:
+
+
+	struct Resource {
+		std::string name;
+		SourceType type;
+		void* data;
+	};
+
+	std::vector<Resource> sourceList;
+
+public:
+
+	template<typename Type>
+	struct Source
+	{
+		std::string name;
+		Type* data;
+	};
+
+	void AddSource(const std::string& name, Drawable* drawable) {
+		Resource newSource;
+
+		newSource.name = name;
+		newSource.type = SourceType::Drawable;
+		newSource.data = drawable;
+
+		sourceList.push_back(newSource);
+	};
+
+	void AddSource(const std::string& name, Sound* sound) {
+		Resource newSource;
+
+		newSource.name = name;
+		newSource.type = SourceType::Sound;
+		newSource.data = sound;
+
+		sourceList.push_back(newSource);
+	};
+
+	void AddSource(const std::string& name, Music* music) {
+		Resource newSource;
+
+		newSource.name = name;
+		newSource.type = SourceType::Music;
+		newSource.data = music;
+
+		sourceList.push_back(newSource);
+	};
+
+	void AddSource(const std::string& name, Shader* shader) {
+		Resource newSource;
+
+		newSource.name = name;
+		newSource.type = SourceType::Shader;
+		newSource.data = shader;
+
+
+		sourceList.push_back(newSource);
+	};
+
+	void ClearSource(const std::string& name) {
+		for (size_t i = 0; i < sourceList.size(); i++) {
+			if (sourceList[i].name == name) {
+				sourceList.erase(sourceList.begin() + i);
+				return;
+			}
+		}
+
+	};
+
+	template<typename Type>
+	Type* getSource(const std::string& name) {
+		for (size_t i = 0; i < sourceList.size(); i++) {
+			if (sourceList[i].name == name) {
+
+				return static_cast<Type*>(sourceList[i].data);
+			}
+		}
+		return nullptr;
+	}
+
+	template<typename Type>
+	std::vector<Source<Type>> getSourceList(SourceType sourceType) {
+		std::vector<Source<Type>> newList;
+		for (size_t i = 0; i < sourceList.size(); i++) {
+			if (sourceList[i].type == sourceType) {
+				Source<Type> newSource;
+				newSource.name = sourceList[i].name;
+				newSource.data = static_cast<Type*>(sourceList[i].data);
+
+				newList.push_back(newSource);
+			}
+		}
+		return newList;
+	}
+
+	size_t CountOfType(SourceType type) {
+		size_t count = 0;
+
+		for (size_t i = 0; i < sourceList.size(); i++) {
+			if (sourceList[i].type == type) {
+				count++;
+			}
+		}
+
+		return count;
+	}
+
+	SourceType getType(const std::string& name) {
+
+		for (size_t i = 0; i < sourceList.size(); i++) {
+			if (sourceList[i].name == name) {
+				return sourceList[i].type;
+			}
+		}
+
+		return SourceType::Unknown;
 	}
 
 };
@@ -504,7 +742,6 @@ static bool CollisionAABB(const AABB& a, const AABB& b) {
 	return collisionX && collisionY;
 }
 
-
 static bool CollisionCircle(const Circle& a, const Circle& b) {
 	float dist = sqrtf(powf((a.point.x - b.point.x), 2.0f) + powf((a.point.y - b.point.y), 2.0f));
 
@@ -580,7 +817,4 @@ static bool CollisionCircleRect(const Circle& circle, const AABB& aabb) {
 	return CollisionCircleRect(circle, newRect, aabb.rotation);
 
 }
-
-
-
 

@@ -14,7 +14,6 @@
     <ClCompile Include="src\SpaceShip.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="include\Utility.cpp" />
     <ClCompile Include="src\bullet.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -51,10 +50,10 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="shaders\backgroundShader .vs">
+    <None Include="shaders\backgroundShader.fs">
       <Filter>shaders</Filter>
     </None>
-    <None Include="shaders\backgroundShader.fs">
+    <None Include="shaders\planetShader.fs">
       <Filter>shaders</Filter>
     </None>
   </ItemGroup>
